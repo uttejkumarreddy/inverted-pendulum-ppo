@@ -1,11 +1,11 @@
 
 import torch
 from EpisodeRewardProcessingFunction import calculate_discounted_reward_to_go
-# Policy Gradient Loss:    Loss = E[log(pi(a|s)) * (R_to_go)]
 
-gamma=0.99
+
 
 def policy_gradient_loss(gamma, traj, policy_function, **kwargs):
+# Policy Gradient Loss:    Loss = E[log(pi(a|s)) * (R_to_go)]
 
     loss = 0
     for trajectory in traj:
@@ -19,6 +19,7 @@ def policy_gradient_loss(gamma, traj, policy_function, **kwargs):
     return loss
 
 def policy_gradient_loss_with_advantage_function(gamma, traj, policy_function, value_function, **kwargs):
+#   Policy Gradient Loss with Advantage Function (A) = E[log(pi(a|s)) * A_t]
 
     loss = 0
     for trajectory in traj:
@@ -31,6 +32,7 @@ def policy_gradient_loss_with_advantage_function(gamma, traj, policy_function, v
     return loss
 
 def surrogate_objective_loss(gamma, traj, ratio_function, value_function, **kwargs):
+#     Surrogate Objective Loss without clipping = E[ratio * A_t]
 
     loss = 0
     for trajectory in traj:
@@ -50,6 +52,8 @@ def clip_func(x, A):
 
 
 def surrogate_objective_loss_clipped(gamma, traj, ratio_function, value_function, clip_value, **kwargs):
+#    Surrogate Objective Loss with clipping = min(ratio * A(s, a), clip(ratio) * A(s, a))
+
     loss = 0
     for trajectory in traj:
         for t, timestep in enumerate(trajectory):
@@ -63,6 +67,19 @@ def surrogate_objective_loss_clipped(gamma, traj, ratio_function, value_function
     loss *= 1 / len(traj) * 1 / len(traj[0])
 
     return loss
+
+def value_loss(gamma, value_function, traj): 
+#    Value Loss = E[(V(s) - R_to_go)^2]
+
+    error = torch.losses.MeanSquaredError()
+    true_val, pred_val = [], []
+    for trajectory in traj:
+        for time, timestep in enumerate(trajectory):
+            true_val.append(calculate_discounted_reward_to_go(trajectory, time, gamma))
+            pred_val.append(value_function(timestep[0]))
+
+    return error(true_val, pred_val)
+
 
 
 
