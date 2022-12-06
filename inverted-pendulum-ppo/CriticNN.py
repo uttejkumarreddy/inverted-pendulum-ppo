@@ -26,4 +26,6 @@ class CriticNN(nn.Module):
         network = self.relu(self.hidden_layer_2(network))
         network = self.output_layer(network)
 
-        return network.item() # scalar for value of state
+        value = network.item()
+
+        return value
