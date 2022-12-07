@@ -1,6 +1,8 @@
 import gym
 import torch
 import numpy as np
+import itertools
+import matplotlib.pyplot as plt
 
 from NormalModule import NormalModule
 from ExperienceReplayBuffer import ExperienceReplayBuffer
@@ -9,6 +11,8 @@ from CriticNN import CriticNN
 
 from torch.distributions import Normal
 from torch.optim import Adam
+
+from collections import deque
 
 class BasePPOAgent:
     def __init__(self):
@@ -19,14 +23,14 @@ class BasePPOAgent:
 
         # sample hyperparameters
         self.batch_size = 10000
-        self.epochs = 30
-        self.learning_rate = 1e-2
+        self.epochs = 1
+        self.learning_rate = 1e-5
         self.hidden_size = 8
         self.n_layers = 2
 
         # additional hyperparameters
         self.gamma = 0.99
-        self.training_size = 5
+        self.training_size = 10000
         
         self.input_size = 3
         self.output_size = 1
@@ -42,13 +46,17 @@ class BasePPOAgent:
         self.actor_optimizer = Adam(self.actor.parameters(), lr = self.learning_rate)
         self.critic_optimizer = Adam(self.actor.parameters(), lr = self.learning_rate)
 
+        # Capture rewards and losses
+        self.episodic_losses = []
+        self.episodic_rewards = []
+
     def train(self):
         for episode in range(self.epochs):
             state = self.env.reset()
-            episodicReward = 0
-            episodicLosses = []
+            self.episodic_losses = []
+            self.episodic_rewards = []
 
-            for step in range(self.training_size):
+            for timestep in range(self.training_size):
                 # Task 1: Environment Interaction Loop
                 # action = env.action_space.sample()
 
@@ -58,7 +66,7 @@ class BasePPOAgent:
                 # gaussianDist = Normal(mean, std)
                 # action = gaussianDist.sample().item()
 
-                mean, std = self.actor.forward(state)
+                mean, std = self.actor.forward(torch.as_tensor(state))
                 normalDistribution = Normal(mean, std)
                 action = normalDistribution.sample().item()
 
@@ -75,34 +83,44 @@ class BasePPOAgent:
 
                 # Calculate and store total loss
                 total_loss = actor_loss - critic_loss
-                episodicLosses.append(total_loss)
-                
+                self.episodic_losses.append(total_loss)
+
+                self.episodic_rewards.append(
+                    self.calculate_reward_to_go(timestep)
+                )
+
                 # Update gradients
                 self.actor_optimizer.zero_grad()
                 total_loss.backward()
                 self.actor_optimizer.step()
                 
                 self.critic_optimizer.zero_grad()
-                total_loss.backward()
+                
                 self.critic_optimizer.step()
 
-                self.env.render()
-    
-        # Task 3: Calculate episodic reward
-        episodicReward = self.calculate_reward_to_go(0)
+                self.env.render()        
 
     # Task 3: Make episodic reward processing function
     def calculate_reward_to_go(self, fromTimestep):
         rewardToGo = 0
-        for timestep, trajectory in enumerate(self.replay_buffer.buffer[fromTimestep:]):
+        for timestep in range(fromTimestep, len(self.replay_buffer.buffer)):
+            trajectory = self.replay_buffer.buffer[timestep]
             reward = trajectory[2]
             rewardToGo += reward * (self.gamma ** timestep)
         return rewardToGo
 
+    # Task 4: Vanilla Policy Gradient Agent
     def get_probability_of_action_in_state(self, state, action):
-        mean, std = self.actor.forward(state)
-        probability = 1 / (std * torch.sqrt(2 * np.pi)) * torch.exp(-(action - mean)**2 / (2 * std**2))
+        mean, std = self.actor.forward(torch.as_tensor(state))
+        a = std * torch.sqrt(2 * torch.as_tensor(np.pi))
+        b = torch.exp(-(action - mean)**2 / (2 * std**2))
+        probability = 1 / a * b
         return probability
+
+    # Task 6: Generalized Advantage
+    def calculate_advantage(self):
+        advantage = 0
+
 
     def actor_loss():
         # Implemented in calling functions
@@ -112,14 +130,37 @@ class BasePPOAgent:
         rewardsTrue = []
         rewardsToGo = []
 
-        for timestep, trajectory in enumerate(self.replay_buffer.buffer):
+        for timestep in range(len(self.replay_buffer.buffer)):
+            trajectory = self.replay_buffer.buffer[timestep]
             rewardsTrue.append(trajectory[2])
             rewardsToGo.append(self.calculate_reward_to_go(timestep))
 
-        mse = (rewardsTrue - rewardsToGo).pow(2).mean()
+        rewardsTrue = np.array(rewardsTrue)
+        rewardsToGo = np.array(rewardsToGo)
+        mse = ((rewardsTrue - rewardsToGo) ** 2).mean()
+
         return mse
+
+    def plot_episodic_losses(self):
+        plt.plot(
+            np.arange(self.training_size),
+            torch.tensor(self.episodic_losses).detach().numpy()
+        )
+        plt.xlabel('Iterations')
+        plt.xlabel('Losses')
+        plt.show()
+
+    def plot_episodic_rewards(self):
+        plt.plot(
+            np.arange(self.training_size),
+            torch.tensor(self.episodic_rewards).detach().numpy()
+        )
+        plt.xlabel('Iterations')
+        plt.xlabel('Reward to Go')
+        plt.show()
     
 
 
 
         
+ 

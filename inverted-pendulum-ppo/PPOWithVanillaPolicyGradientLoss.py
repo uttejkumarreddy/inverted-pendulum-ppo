@@ -7,16 +7,14 @@ class PPOAgentWithVanillaPolicyGradientLoss(BasePPOAgent):
 
     def actor_loss(self):
         loss = 0
-        for timestep, trajectory in self.replay_buffer.buffer:
+
+        for timestep in range(len(self.replay_buffer.buffer)):
+            trajectory = self.replay_buffer.buffer[timestep]
             rewardToGo = self.calculate_reward_to_go(timestep)
             loss += torch.log(
                 self.get_probability_of_action_in_state(
                     trajectory[0],
                     trajectory[1]
                 )) * rewardToGo
-        return loss
 
-if __name__ == 'main':
-    print('uttej')
-    agent = PPOAgentWithVanillaPolicyGradientLoss()
-    agent.train()
+        return loss
