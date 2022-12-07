@@ -1,12 +1,21 @@
 import torch
 from PPO import BasePPOAgent
 
-class PPOAgentWithVanillaPolicyGradientLoss(BasePPOAgent):
+class PPOWithSurrogateLossWithoutClipping(BasePPOAgent):
     def __init__(self):
-        super(PPOAgentWithVanillaPolicyGradientLoss, self).__init__()
+        super(PPOWithSurrogateLossWithoutClipping, self).__init__()
 
     def actor_loss(self):
         loss = 0
-        for timestep, trajectory in self.replay_buffer.buffer:
-            rewardToGo = self.calculate_reward_to_go(timestep)
-            loss += torch.log()
+        for timestep in range(len(self.replay_buffer.buffer)):
+            trajectory = self.replay_buffer.buffer[timestep]
+
+            state = trajectory[0]
+            action = trajectory[1]
+
+            action_ratio = self.action_ratio(state, action)
+            advantage = self.advantage_function(timestep)
+
+            loss += action_ratio * advantage
+
+        return loss

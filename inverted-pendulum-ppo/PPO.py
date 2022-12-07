@@ -1,7 +1,7 @@
 import gym
 import torch
 import numpy as np
-import itertools
+import copy
 import matplotlib.pyplot as plt
 
 from NormalModule import NormalModule
@@ -41,6 +41,9 @@ class BasePPOAgent:
         # Actor and critic networks
         self.actor = ActorNN(self.input_size, self.output_size, self.hidden_size, self.n_layers)
         self.critic = CriticNN(self.input_size, self.output_size, self.hidden_size, self.n_layers)
+
+        # Actor network copy for Surrogative objective
+        self.actor_old = ActorNN(self.input_size, self.output_size, self.hidden_size, self.n_layers)
 
         # Actor and critic optimizers
         self.actor_optimizer = Adam(self.actor.parameters(), lr = self.learning_rate)
@@ -89,6 +92,10 @@ class BasePPOAgent:
                     self.calculate_reward_to_go(timestep)
                 )
 
+                # Copy over the actor network before updating gradients
+                with torch.no_grad():
+                    self.actor_old = copy.deepcopy(self.actor)
+
                 # Update gradients
                 self.actor_optimizer.zero_grad()
                 total_loss.backward()
@@ -111,11 +118,15 @@ class BasePPOAgent:
         return rewardToGo
 
     # Task 4: Vanilla Policy Gradient Agent
-    def get_probability_of_action_in_state(self, state, action):
-        mean, std = self.actor.forward(torch.as_tensor(state))
+    def get_probability_of_action_in_state(self, state, action, usePreviousActor = False):
+        mean, std = None, None
+        if usePreviousActor:
+            mean, std = self.actor_old.forward(torch.as_tensor(state))
+        else:
+            mean, std = self.actor.forward(torch.as_tensor(state))
         a = std * torch.sqrt(2 * torch.as_tensor(np.pi))
         b = torch.exp(-(action - mean)**2 / (2 * std**2))
-        probability = 1 / a * b
+        probability = 1 / (a * b)
         return probability
 
     # Task 6: Generalized Advantage
@@ -136,8 +147,17 @@ class BasePPOAgent:
 
         return advantage
 
+    # Task 7: Surrogate Objective Functions
+    def action_ratio(self, state, action):
+        probability_of_action_in_current_actor = self.get_probability_of_action_in_state(state, action)
+        probability_of_action_in_old_actor = self.get_probability_of_action_in_state(state, action, True)
+        return (probability_of_action_in_current_actor / probability_of_action_in_old_actor)
+
+    def surrogate_loss_function(self):
+        pass
+
     # Actor Functions
-    def actor_loss():
+    def actor_loss(self):
         # Implemented in calling functions
         pass
 
