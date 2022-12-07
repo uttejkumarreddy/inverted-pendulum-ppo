@@ -27,10 +27,7 @@ class ActorNN(nn.Module):
         log_std = -0.5 * np.ones(self.output_size, dtype=np.float32)
         log_std = torch.nn.Parameter(torch.as_tensor(log_std))
         log_std = torch.exp(log_std)
-
-        normalDistribution = Normal(mean, log_std)
-        action = normalDistribution.sample().item()
         
-        return action
+        return mean, log_std
 
         

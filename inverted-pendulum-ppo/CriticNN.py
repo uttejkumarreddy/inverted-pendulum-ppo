@@ -1,5 +1,5 @@
-import torch.nn as nn
 import torch
+import torch.nn as nn
 
 # Task 5: Add FFN for Critic
 class CriticNN(nn.Module):

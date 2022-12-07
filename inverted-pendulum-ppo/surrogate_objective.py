@@ -1,5 +1,5 @@
 import gym
-from PPO import PPOAgent
+from PPO import BasePPOAgent
 import time
 import numpy as np
 import matplotlib.pyplot as plt

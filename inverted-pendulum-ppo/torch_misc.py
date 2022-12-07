@@ -3,7 +3,7 @@ import torch
 from torch.optim import Adam
 from torch.distributions.normal import Normal
 
-from Modules import NormalModule
+from NormalModule import NormalModule
 
 
 # standard torch flow

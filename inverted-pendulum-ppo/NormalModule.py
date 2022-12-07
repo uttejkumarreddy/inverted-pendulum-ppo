@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-
 class NormalModule(nn.Module):
     def __init__(self, inp, out, activation=nn.Tanh):
         super().__init__()

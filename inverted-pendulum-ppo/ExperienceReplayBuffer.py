@@ -6,8 +6,8 @@ class ExperienceReplayBuffer():
         self.size = size
         self.buffer = deque(maxlen = size)
 
-    def append(self, experience):
-        self.buffer.append(experience)
+    def append(self, trajectory):
+        self.buffer.append(trajectory)
 
     def sample(self, batch_size):
         randomIndices = np.random.choice(
