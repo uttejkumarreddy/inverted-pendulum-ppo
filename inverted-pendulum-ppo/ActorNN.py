@@ -4,24 +4,25 @@ import numpy as np
 from torch.distributions import Normal
 
 class ActorNN(nn.Module):
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, output_size, hidden_size, n_layers):
         super(ActorNN, self).__init__()
 
         self.input_size = input_size
         self.output_size = output_size
+        self.hidden_size = hidden_size
+        self.n_layers = n_layers
 
-        self.input_layer = nn.Linear(input_size, 32)
+        self.tanh = nn.Tanh()
 
-        self.hidden_layer_1 = nn.Linear(32, 128)
-        self.hidden_layer_2 = nn.Linear(128, 256)
-
-        self.output_layer_mean = nn.Linear(256, self.output_size)
+        self.input_layer = nn.Linear(self.input_size, self.hidden_size)
+        self.hidden_layer = nn.Linear(self.hidden_size, self.hidden_size)
+        self.output_layer = nn.Linear(self.hidden_size, self.output_size)
     
     def forward(self, state):
-        network = nn.ReLU(self.input_layer(state))
-        network = nn.ReLU(self.hidden_layer_1(network))
-        network = nn.ReLU(self.hidden_layer_2(network))
-        mean = self.output_layer_mean(network)
+        network = self.tanh(self.input_layer(state))
+        for i in range(self.n_layers):
+            network = self.tanh(self.hidden_layer(network))
+        mean = self.output_layer(network)
 
         log_std = -0.5 * np.ones(self.output_size, dtype=np.float32)
         log_std = torch.nn.Parameter(torch.as_tensor(log_std))

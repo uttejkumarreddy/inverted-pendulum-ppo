@@ -3,27 +3,26 @@ import torch
 
 # Task 5: Add FFN for Critic
 class CriticNN(nn.Module):
-    def __init__(self):
+    def __init__(self, input_size, output_size, hidden_size, n_layers):
         super(CriticNN, self).__init__()
 
-        self.IN_SIZE = 3
-        self.OUT_SIZE = 1
+        self.input_size = input_size
+        self.output_size = output_size
+        self.hidden_size = hidden_size
+        self.n_layers = n_layers
 
-        self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
 
-        self.input_layer = nn.Linear(self.IN_SIZE, 32)
-
-        self.hidden_layer_1 = nn.Linear(32, 128)
-        self.hidden_layer_2 = nn.Linear(128, 256)
-
-        self.output_layer = nn.Linear(256, self.OUT_SIZE)
+        self.input_layer = nn.Linear(self.input_size, self.hidden_size)
+        self.hidden_layer = nn.Linear(self.hidden_size, self.hidden_size)
+        self.output_layer = nn.Linear(self.hidden_size, self.output_size)
 
     def forward(self, state):
         state = torch.as_tensor(state)
 
-        network = self.relu(self.input_layer(state))
-        network = self.relu(self.hidden_layer_1(network))
-        network = self.relu(self.hidden_layer_2(network))
+        network = self.tanh(self.input_layer(state))
+        for i in range(self.n_layers):
+            network = self.tanh(self.hidden_layer(network))
         network = self.output_layer(network)
 
         value = network.item()
