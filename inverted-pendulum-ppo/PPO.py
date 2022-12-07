@@ -24,7 +24,7 @@ class BasePPOAgent:
         # sample hyperparameters
         self.batch_size = 10000
         self.epochs = 1
-        self.learning_rate = 1e-5
+        self.learning_rate = 1e-3
         self.hidden_size = 8
         self.n_layers = 2
 
@@ -95,10 +95,11 @@ class BasePPOAgent:
                 self.actor_optimizer.step()
                 
                 self.critic_optimizer.zero_grad()
-                
                 self.critic_optimizer.step()
 
-                self.env.render()        
+                self.env.render()
+
+                state = obs     
 
     # Task 3: Make episodic reward processing function
     def calculate_reward_to_go(self, fromTimestep):
@@ -118,14 +119,29 @@ class BasePPOAgent:
         return probability
 
     # Task 6: Generalized Advantage
-    def calculate_advantage(self):
+    def advantage_function(self, fromTimestep):
         advantage = 0
 
+        critic_values = []
+        for timestep in range(len(self.replay_buffer.buffer)):
+            trajectory = self.replay_buffer.buffer[timestep]
+            state = trajectory[0]
+            critic_value = self.get_critic_value(state)
+            critic_values.append(critic_value)
 
+        for timestep in reversed(range(fromTimestep)):
+            trajectory = self.replay_buffer.buffer[timestep]
+            reward = trajectory[2]
+            advantage += reward + (self.gamma * critic_values[timestep + 1]) - critic_values[timestep]
+
+        return advantage
+
+    # Actor Functions
     def actor_loss():
         # Implemented in calling functions
         pass
 
+    # Critic Functions
     def critic_loss(self):
         rewardsTrue = []
         rewardsToGo = []
@@ -140,6 +156,9 @@ class BasePPOAgent:
         mse = ((rewardsTrue - rewardsToGo) ** 2).mean()
 
         return mse
+
+    def get_critic_value(self, state):
+        return self.critic.forward(torch.as_tensor(state))
 
     def plot_episodic_losses(self):
         plt.plot(
@@ -158,9 +177,3 @@ class BasePPOAgent:
         plt.xlabel('Iterations')
         plt.xlabel('Reward to Go')
         plt.show()
-    
-
-
-
-        
- 

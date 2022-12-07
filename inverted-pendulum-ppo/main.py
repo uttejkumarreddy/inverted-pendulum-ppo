@@ -10,7 +10,7 @@ agents = [
     PPOAgentWithVanillaPolicyGradientLoss()
 ]
 
-agent = agents[3]
+agent = agents[0]
 agent.train()
 agent.plot_episodic_losses()
 agent.plot_episodic_rewards()
