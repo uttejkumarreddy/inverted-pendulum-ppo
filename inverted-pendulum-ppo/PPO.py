@@ -23,14 +23,14 @@ class BasePPOAgent:
 
         # sample hyperparameters
         self.batch_size = 10000
-        self.epochs = 1
+        self.epochs = 30
         self.learning_rate = 1e-3
         self.hidden_size = 8
         self.n_layers = 2
 
         # additional hyperparameters
         self.gamma = 0.99
-        self.training_size = 10000
+        self.training_size = 200
         
         self.input_size = 3
         self.output_size = 1
@@ -46,8 +46,8 @@ class BasePPOAgent:
         self.actor_old = ActorNN(self.input_size, self.output_size, self.hidden_size, self.n_layers)
 
         # Actor and critic optimizers
-        self.actor_optimizer = Adam(self.actor.parameters(), lr = self.learning_rate)
-        self.critic_optimizer = Adam(self.actor.parameters(), lr = self.learning_rate)
+        self.actor_optimizer = Adam(self.actor.parameters(), lr = self.learning_rate, eps = 1e-5)
+        self.critic_optimizer = Adam(self.actor.parameters(), lr = self.learning_rate, eps = 1e-5)
 
         # Capture rewards and losses
         self.episodic_losses = []
@@ -58,6 +58,7 @@ class BasePPOAgent:
             state = self.env.reset()
             self.episodic_losses = []
             self.episodic_rewards = []
+            self.episodic_reward = 0
 
             for timestep in range(self.training_size):
                 # Task 1: Environment Interaction Loop
@@ -80,33 +81,33 @@ class BasePPOAgent:
                 trajectory = [state, action, reward, obs]
                 self.replay_buffer.append(trajectory)
 
-                # Calculate losses
-                actor_loss = self.actor_loss()
-                critic_loss = self.critic_loss()
+                state = obs
 
-                # Calculate and store total loss
-                total_loss = actor_loss - critic_loss
-                self.episodic_losses.append(total_loss)
+            # Calculate losses
+            actor_loss = self.actor_loss()
+            critic_loss = self.critic_loss()
 
-                self.episodic_rewards.append(
-                    self.calculate_reward_to_go(timestep)
-                )
+            # Calculate and store total loss
+            total_loss = actor_loss - critic_loss
+            self.episodic_losses.append(total_loss)
 
-                # Copy over the actor network before updating gradients
-                with torch.no_grad():
-                    self.actor_old = copy.deepcopy(self.actor)
+            self.episodic_rewards.append(
+                self.calculate_reward_to_go(timestep)
+            )
 
-                # Update gradients
-                self.actor_optimizer.zero_grad()
-                total_loss.backward()
-                self.actor_optimizer.step()
-                
-                self.critic_optimizer.zero_grad()
-                self.critic_optimizer.step()
+            # Copy over the actor network before updating gradients
+            with torch.no_grad():
+                self.actor_old = copy.deepcopy(self.actor)
 
-                self.env.render()
+            # Update gradients
+            self.actor_optimizer.zero_grad()
+            total_loss.backward()
+            self.actor_optimizer.step()
+            
+            self.critic_optimizer.zero_grad()
+            self.critic_optimizer.step()
 
-                state = obs     
+            self.env.render()
 
     # Task 3: Make episodic reward processing function
     def calculate_reward_to_go(self, fromTimestep):
