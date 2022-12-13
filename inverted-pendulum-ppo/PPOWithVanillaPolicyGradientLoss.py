@@ -10,6 +10,8 @@ class PPOAgentWithVanillaPolicyGradientLoss(BasePPOAgent):
 
         for timestep in range(len(self.replay_buffer.buffer)):
             trajectory = self.replay_buffer.buffer[timestep]
+
+            # As mentioned in README.md, using rewards-to-go to calculate loss instead of advantage
             rewardToGo = self.calculate_reward_to_go(timestep)
             loss += torch.log(
                 self.get_probability_of_action_in_state(
