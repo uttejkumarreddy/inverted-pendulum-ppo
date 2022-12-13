@@ -22,7 +22,7 @@ class BasePPOAgent:
         self.state = self.env.reset()
 
         # sample hyperparameters
-        self.batch_size = 10
+        self.batch_size = 10000
         self.epochs = 30
         self.learning_rate = 1e-3
         self.hidden_size = 8
@@ -30,7 +30,7 @@ class BasePPOAgent:
 
         # additional hyperparameters
         self.gamma = 0.99
-        self.training_size = 100
+        self.training_size = 200
         
         self.input_size = 3
         self.output_size = 1
@@ -52,11 +52,13 @@ class BasePPOAgent:
         # Capture rewards and losses
         self.episodic_losses = []
         self.episodic_rewards = []
-        self.episodic_advantage_estimates = []
 
     def train(self):
         for episode in range(self.epochs):
             state = self.env.reset()
+            self.episodic_losses = []
+            self.episodic_rewards = []
+            self.episodic_reward = 0
 
             for timestep in range(self.training_size):
                 # Task 1: Environment Interaction Loop
@@ -81,40 +83,31 @@ class BasePPOAgent:
 
                 state = obs
 
-            # Copy over the actor network before updating gradients
-            with torch.no_grad():
-                self.actor_old = copy.deepcopy(self.actor)
-
-            # Calculate rewards-to-go for the trajectories in replay buffer
-            self.episodic_rewards.append(self.calculate_reward_to_go(0))
-            
-            # Calculate advantage estimates for the trajectories in the replay buffer
-            self.episodic_advantage_estimates.append(self.advantage_function(0))
-
             # Calculate losses
             actor_loss = self.actor_loss()
             critic_loss = self.critic_loss()
-
-            # Enable requires_grad on critic loss
-            critic_loss = torch.as_tensor([critic_loss])
-            critic_loss.requires_grad_()
 
             # Calculate and store total loss
             total_loss = actor_loss - critic_loss
             self.episodic_losses.append(total_loss)
 
+            self.episodic_rewards.append(
+                self.calculate_reward_to_go(timestep)
+            )
+
+            # Copy over the actor network before updating gradients
+            with torch.no_grad():
+                self.actor_old = copy.deepcopy(self.actor)
+
             # Update gradients
             self.actor_optimizer.zero_grad()
-            actor_loss.backward()
+            total_loss.backward()
             self.actor_optimizer.step()
             
             self.critic_optimizer.zero_grad()
-            critic_loss.backward()
             self.critic_optimizer.step()
 
             self.env.render()
-
-            self.replay_buffer.clear()
 
     # Task 3: Make episodic reward processing function
     def calculate_reward_to_go(self, fromTimestep):
