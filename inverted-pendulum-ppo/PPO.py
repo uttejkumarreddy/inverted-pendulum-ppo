@@ -182,7 +182,7 @@ class BasePPOAgent:
 
     def plot_episodic_losses(self):
         plt.plot(
-            np.arange(self.training_size),
+            np.arange(len(self.episodic_losses)),
             torch.tensor(self.episodic_losses).detach().numpy()
         )
         plt.xlabel('Iterations')
@@ -191,7 +191,7 @@ class BasePPOAgent:
 
     def plot_episodic_rewards(self):
         plt.plot(
-            np.arange(self.training_size),
+            np.arange(len(self.episodic_rewards)),
             torch.tensor(self.episodic_rewards).detach().numpy()
         )
         plt.xlabel('Iterations')
