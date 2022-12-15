@@ -29,8 +29,8 @@ class BasePPOAgent:
         # additional hyperparameters
         self.gamma = 0.99
         self.timesteps_total = 10000
-        self.timesteps_episode = 100
-        self.timesteps_to_update = 20
+        self.timesteps_episode = 200
+        self.timesteps_to_update = 200
         
         self.input_size = 3
         self.output_size = 1
