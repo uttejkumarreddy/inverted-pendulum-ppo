@@ -4,10 +4,8 @@ import numpy as np
 import copy
 import matplotlib.pyplot as plt
 
-from NormalModule import NormalModule
+from NeuralNets import ActorNN, CriticNN, NormalModule
 from ExperienceReplayBuffer import ExperienceReplayBuffer
-from ActorNN import ActorNN
-from CriticNN import CriticNN
 
 from torch.distributions import Normal
 from torch.optim import Adam
@@ -28,9 +26,9 @@ class BasePPOAgent:
 
         # additional hyperparameters
         self.gamma = 0.99
-        self.timesteps_total = 10000
+        self.timesteps_total = 100000
         self.timesteps_episode = 200
-        self.timesteps_to_update = 200
+        self.timesteps_to_update = 400
         
         self.input_size = 3
         self.output_size = 1
@@ -47,7 +45,7 @@ class BasePPOAgent:
 
         # Actor and critic optimizers
         self.actor_optimizer = Adam(self.actor.parameters(), lr = self.learning_rate)
-        self.critic_optimizer = Adam(self.actor.parameters(), lr = self.learning_rate)
+        self.critic_optimizer = Adam(self.critic.parameters(), lr = self.learning_rate)
 
         # Capture rewards and losses
         self.episodic_losses = []

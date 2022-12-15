@@ -1,16 +1,6 @@
-from PPOWithGeneralizedAdvantageLoss import PPOWithGeneralizedAdvantageLoss
-from PPOWithSurrogateLossWithClipping import PPOWithSurrogateLossWithClipping
-from PPOWithSurrogateLossWithoutClipping import PPOWithSurrogateLossWithoutClipping
-from PPOWithVanillaPolicyGradientLoss import PPOAgentWithVanillaPolicyGradientLoss
+from PPOAgentsLosses import PPOAgentWithVanillaPolicyGradientLoss, PPOWithGeneralizedAdvantageLoss, PPOWithSurrogateLossWithoutClipping, PPOWithSurrogateLossWithClipping
 
-agents = [
-    PPOWithGeneralizedAdvantageLoss(),
-    PPOWithSurrogateLossWithClipping(),
-    PPOWithSurrogateLossWithoutClipping(),
-    PPOAgentWithVanillaPolicyGradientLoss()
-]
-
-agent = agents[3]
+agent = PPOAgentWithVanillaPolicyGradientLoss()
 agent.train()
-agent.plot_episodic_losses()
 agent.plot_episodic_rewards()
+agent.plot_episodic_losses()

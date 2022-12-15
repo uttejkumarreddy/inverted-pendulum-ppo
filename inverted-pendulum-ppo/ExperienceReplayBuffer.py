@@ -1,5 +1,4 @@
 from collections import deque
-import numpy as np
 
 class ExperienceReplayBuffer():
     def __init__(self, size):
