@@ -202,16 +202,30 @@ class BasePPOAgent:
         plt.xlabel('Rewards')
         plt.show()
 
-    def calculate_actor_loss(self):
+    def calculate_actor_loss(self, batch_state, batch_action, batch_reward, batch_obs, batch_rtg):
         pass
 
-    def calculate_critic_loss(self, batch_reward, batch_rtg):
+    def calculate_critic_loss(self, batch_state, batch_action, batch_reward, batch_obs, batch_rtg):
         critic_loss = self.critic_loss(batch_reward, batch_rtg)
         critic_loss = torch.as_tensor([critic_loss])
         critic_loss.requires_grad_()
         return critic_loss
 
     def update_networks(self):
-        pass
+        batch_state, batch_action, batch_reward, batch_obs, batch_rtg = zip(*self.replay_buffer.buffer)
+        
+        actor_loss = self.calculate_actor_loss(batch_state, batch_action, batch_reward, batch_obs, batch_rtg)
+        critic_loss = self.calculate_critic_loss(batch_state, batch_action, batch_reward, batch_obs, batch_rtg)
+
+        # Update gradients
+        self.actor_optimizer.zero_grad()
+        actor_loss.backward()
+        self.actor_optimizer.step()
+        
+        self.critic_optimizer.zero_grad()
+        critic_loss.backward()
+        self.critic_optimizer.step()
+
+        return { 'actor_loss': actor_loss, 'critic_loss': critic_loss }
 
 
