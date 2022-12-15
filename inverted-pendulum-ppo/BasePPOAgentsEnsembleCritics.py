@@ -5,8 +5,8 @@ from NeuralNets import CriticNN
 from torch.optim import Adam
 
 class BaseEnsembleCriticsPPOAgent(BasePPOAgent):
-    def __init__(self):
-        super(BaseEnsembleCriticsPPOAgent, self).__init__()
+    def __init__(self, actor, critic):
+        super(BaseEnsembleCriticsPPOAgent, self).__init__(actor, critic)
 
         self.critic2 = CriticNN(self.input_size, self.output_size, 8, self.n_layers)
         self.critic3 = CriticNN(self.input_size, self.output_size, 32, self.n_layers)

@@ -13,7 +13,7 @@ from torch.optim import Adam
 from collections import deque
 
 class BasePPOAgent:
-    def __init__(self):
+    def __init__(self, actor, critic):
         # Environment
         self.env = gym.make('Pendulum-v1')
         
@@ -26,7 +26,7 @@ class BasePPOAgent:
 
         # additional hyperparameters
         self.gamma = 0.99
-        self.timesteps_total = 10000
+        self.timesteps_total = 2000
         self.timesteps_episode = 200
         self.timesteps_to_update = 400
         
@@ -37,8 +37,8 @@ class BasePPOAgent:
         self.replay_buffer = ExperienceReplayBuffer(self.timesteps_to_update)
 
         # Actor and critic networks
-        self.actor = ActorNN(self.input_size, self.output_size, self.hidden_size, self.n_layers)
-        self.critic = CriticNN(self.input_size, self.output_size, self.hidden_size, self.n_layers)
+        self.actor = actor
+        self.critic = critic
 
         # Actor network copy for Surrogative objective
         self.actor_old = ActorNN(self.input_size, self.output_size, self.hidden_size, self.n_layers)

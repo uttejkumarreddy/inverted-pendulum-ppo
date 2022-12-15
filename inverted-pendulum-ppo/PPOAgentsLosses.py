@@ -2,8 +2,8 @@ import torch
 from BasePPOAgent import BasePPOAgent
 
 class PPOAgentWithVanillaPolicyGradientLoss(BasePPOAgent):
-    def __init__(self):
-        super(PPOAgentWithVanillaPolicyGradientLoss, self).__init__()
+    def __init__(self, actor, critic):
+        super(PPOAgentWithVanillaPolicyGradientLoss, self).__init__(actor, critic)
 
     def calculate_actor_loss(self, batch_state, batch_action, batch_reward, batch_obs, batch_rtg):
         length_trajectories = len(batch_state)
@@ -21,8 +21,8 @@ class PPOAgentWithVanillaPolicyGradientLoss(BasePPOAgent):
         return actor_loss
 
 class PPOWithGeneralizedAdvantageLoss(BasePPOAgent):
-    def __init__(self):
-        super(PPOWithGeneralizedAdvantageLoss, self).__init__()
+    def __init__(self, actor, critic):
+        super(PPOWithGeneralizedAdvantageLoss, self).__init__(actor, critic)
 
     def calculate_actor_loss(self, batch_state, batch_action, batch_reward, batch_obs, batch_rtg):
         length_trajectories = len(batch_state)
@@ -41,8 +41,8 @@ class PPOWithGeneralizedAdvantageLoss(BasePPOAgent):
         return actor_loss
 
 class PPOWithSurrogateLossWithoutClipping(BasePPOAgent):
-    def __init__(self):
-        super(PPOWithSurrogateLossWithoutClipping, self).__init__()
+    def __init__(self, actor, critic):
+        super(PPOWithSurrogateLossWithoutClipping, self).__init__(actor, critic)
 
     def calculate_actor_loss(self, batch_state, batch_action, batch_reward, batch_obs, batch_rtg):
         length_trajectories = len(batch_state)
@@ -59,8 +59,8 @@ class PPOWithSurrogateLossWithoutClipping(BasePPOAgent):
         return actor_loss
 
 class PPOWithSurrogateLossWithClipping(BasePPOAgent):
-    def __init__(self):
-        super(PPOWithSurrogateLossWithClipping, self).__init__()
+    def __init__(self, actor, critic):
+        super(PPOWithSurrogateLossWithClipping, self).__init__(actor, critic)
         self.clip_value = 0.2
 
     def calculate_actor_loss(self, batch_state, batch_action, batch_reward, batch_obs, batch_rtg):
