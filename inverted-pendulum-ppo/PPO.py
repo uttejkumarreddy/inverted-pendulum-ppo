@@ -202,6 +202,15 @@ class BasePPOAgent:
         plt.xlabel('Rewards')
         plt.show()
 
+    def calculate_actor_loss(self):
+        pass
+
+    def calculate_critic_loss(self, batch_reward, batch_rtg):
+        critic_loss = self.critic_loss(batch_reward, batch_rtg)
+        critic_loss = torch.as_tensor([critic_loss])
+        critic_loss.requires_grad_()
+        return critic_loss
+
     def update_networks(self):
         pass
 
