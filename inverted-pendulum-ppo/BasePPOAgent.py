@@ -17,7 +17,7 @@ class BasePPOAgent:
         # Environment
         self.env = gym.make('Pendulum-v1')
         
-        self.state = self.env.reset()
+        self.state = self.reset_env()
 
         # sample hyperparameters
         self.learning_rate = 3e-4
@@ -41,7 +41,7 @@ class BasePPOAgent:
         self.critic = critic
 
         # Actor network copy for Surrogative objective
-        self.actor_old = ActorNN(self.input_size, self.output_size, self.hidden_size, self.n_layers)
+        self.actor_old = actor
 
         # Actor and critic optimizers
         self.actor_optimizer = Adam(self.actor.parameters(), lr = self.learning_rate)
@@ -57,7 +57,7 @@ class BasePPOAgent:
 
         while iter_timesteps_taken < self.timesteps_total:
 
-            state = self.env.reset()
+            state = self.reset_env()
             episode_reward = 0
             losses = { 'actor_loss': 0, 'critic_loss': 0 }
 
@@ -79,7 +79,7 @@ class BasePPOAgent:
                 action = normalDistribution.sample().item()
 
                 # Apply action
-                obs, reward, done, info = self.env.step([action])
+                obs, reward, done, info = self.apply_action(action)
                 episode_reward += reward
 
                 # Task 2: Store trajectory in experience replay buffer
@@ -182,6 +182,7 @@ class BasePPOAgent:
     def get_critic_value(self, state):
         return self.critic.forward(torch.as_tensor(state))
 
+    # Plot functions
     def plot_episodic_losses(self):
         plt.plot(
             np.arange(len(self.episodic_losses)),
@@ -200,6 +201,7 @@ class BasePPOAgent:
         plt.xlabel('Rewards')
         plt.show()
 
+    # Gradient update functions
     def calculate_actor_loss(self, batch_state, batch_action, batch_reward, batch_obs, batch_rtg):
         pass
 
@@ -225,5 +227,16 @@ class BasePPOAgent:
         self.critic_optimizer.step()
 
         return { 'actor_loss': actor_loss, 'critic_loss': critic_loss }
+
+    # Apply action and get observation from environment
+    def reset_env(self):
+        state = self.env.reset()
+        return state
+
+    def apply_action(self, action):
+        obs, reward, done, info = self.env.step([action])
+        return obs, reward, done, info
+
+
 
 
