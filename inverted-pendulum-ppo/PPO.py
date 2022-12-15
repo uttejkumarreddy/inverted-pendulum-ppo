@@ -22,21 +22,21 @@ class BasePPOAgent:
         self.state = self.env.reset()
 
         # sample hyperparameters
-        self.batch_size = 10000
-        self.epochs = 1
-        self.learning_rate = 1e-3
-        self.hidden_size = 8
+        self.learning_rate = 3e-4
+        self.hidden_size = 64
         self.n_layers = 2
 
         # additional hyperparameters
         self.gamma = 0.99
-        self.training_size = 10000
+        self.timesteps_total = 10000
+        self.timesteps_episode = 100
+        self.timesteps_to_update = 20
         
         self.input_size = 3
         self.output_size = 1
 
         # Experience replay buffer
-        self.replay_buffer = ExperienceReplayBuffer(self.training_size)
+        self.replay_buffer = ExperienceReplayBuffer(self.timesteps_to_update)
 
         # Actor and critic networks
         self.actor = ActorNN(self.input_size, self.output_size, self.hidden_size, self.n_layers)
@@ -54,12 +54,17 @@ class BasePPOAgent:
         self.episodic_rewards = []
 
     def train(self):
-        for episode in range(self.epochs):
-            state = self.env.reset()
-            self.episodic_losses = []
-            self.episodic_rewards = []
+        iter_timesteps_taken = 0
+        update_count = 0
 
-            for timestep in range(self.training_size):
+        while iter_timesteps_taken < self.timesteps_total:
+
+            state = self.env.reset()
+            episode_reward = 0
+            losses = { 'actor_loss': 0, 'critic_loss': 0 }
+
+            iter_timesteps_episode = 0
+            while iter_timesteps_episode < self.timesteps_episode:
                 # Task 1: Environment Interaction Loop
                 # action = env.action_space.sample()
 
@@ -69,44 +74,37 @@ class BasePPOAgent:
                 # gaussianDist = Normal(mean, std)
                 # action = gaussianDist.sample().item()
 
+                iter_timesteps_taken += 1
+
                 mean, std = self.actor.forward(torch.as_tensor(state))
                 normalDistribution = Normal(mean, std)
                 action = normalDistribution.sample().item()
 
                 # Apply action
                 obs, reward, done, info = self.env.step([action])
+                episode_reward += reward
 
                 # Task 2: Store trajectory in experience replay buffer
                 trajectory = [state, action, reward, obs]
                 self.replay_buffer.append(trajectory)
 
-                # Calculate losses
-                actor_loss = self.actor_loss()
-                critic_loss = self.critic_loss()
+                # Update actor and critic networks 
+                if iter_timesteps_taken % self.timesteps_to_update == 0:
+                    self.replay_buffer.append_rtgs()
+                    losses = self.update_networks()
+                    update_count += 1
 
-                # Calculate and store total loss
-                total_loss = actor_loss - critic_loss
-                self.episodic_losses.append(total_loss)
+                    print ('Update', update_count, 'Reward', episode_reward, 'Actor loss', losses['actor_loss'], 'Critic loss', losses['critic_loss'])
 
-                self.episodic_rewards.append(
-                    self.calculate_reward_to_go(timestep)
-                )
+                    self.replay_buffer.clear()
 
-                # Copy over the actor network before updating gradients
-                with torch.no_grad():
-                    self.actor_old = copy.deepcopy(self.actor)
+                if done:
+                    break
 
-                # Update gradients
-                self.actor_optimizer.zero_grad()
-                total_loss.backward()
-                self.actor_optimizer.step()
-                
-                self.critic_optimizer.zero_grad()
-                self.critic_optimizer.step()
+                state = obs
 
-                self.env.render()
-
-                state = obs     
+            self.episodic_rewards.append(episode_reward)
+            self.episodic_losses.append(losses['actor_loss'] + losses['critic_loss'])
 
     # Task 3: Make episodic reward processing function
     def calculate_reward_to_go(self, fromTimestep):
@@ -162,7 +160,13 @@ class BasePPOAgent:
         pass
 
     # Critic Functions
-    def critic_loss(self):
+    def critic_loss(self, rewards, rtgs):
+        if rewards:
+            rewards = np.array(rewards)
+            rtgs = np.array(rtgs)
+            mse = ((rewards - rtgs) ** 2).mean()
+            return mse
+
         rewardsTrue = []
         rewardsToGo = []
 
@@ -182,7 +186,7 @@ class BasePPOAgent:
 
     def plot_episodic_losses(self):
         plt.plot(
-            np.arange(self.training_size),
+            np.arange(len(self.episodic_losses)),
             torch.tensor(self.episodic_losses).detach().numpy()
         )
         plt.xlabel('Iterations')
@@ -191,9 +195,14 @@ class BasePPOAgent:
 
     def plot_episodic_rewards(self):
         plt.plot(
-            np.arange(self.training_size),
+            np.arange(len(self.episodic_rewards)),
             torch.tensor(self.episodic_rewards).detach().numpy()
         )
         plt.xlabel('Iterations')
-        plt.xlabel('Reward to Go')
+        plt.xlabel('Rewards')
         plt.show()
+
+    def update_networks(self):
+        pass
+
+

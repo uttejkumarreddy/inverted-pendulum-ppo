@@ -9,19 +9,14 @@ class ExperienceReplayBuffer():
     def append(self, trajectory):
         self.buffer.append(trajectory)
 
-    def sample(self, batch_size):
-        randomIndices = np.random.choice(
-            np.arange(len(self.buffer)),
-            size = batch_size,
-            replace = False
-            )
-
-        samples = []
-        for index in randomIndices:
-            sample = self.buffer[index]
-            samples.append(sample)
-        
-        return samples
+    def append_rtgs(self):
+      for count, trajectory in enumerate(self.buffer):
+        rtg = 0
+        for timestep in range(count, len(self.buffer)):
+            trajectory = self.buffer[timestep]
+            reward = trajectory[2]
+            rtg += reward * (0.99 ** timestep)
+        self.buffer[count].append(rtg)
     
     def clear(self):
         self.buffer.clear()
