@@ -10,8 +10,8 @@ critic = NeuralNets.CriticNN(3, 1, 64, 2)
 lstm_actor = NeuralNets.ActorNN(2, 1, 64, 2)
 lstm_critic = NeuralNets.CriticNN(2, 1, 64, 2)
 
-images_actor = NeuralNets.ActorNN(1, 1, 64, 2)
-images_critic = NeuralNets.CriticNN(1, 1, 64, 2)
+images_actor = NeuralNets.ActorNN(3, 1, 64, 2)
+images_critic = NeuralNets.CriticNN(3, 1, 64, 2)
 
 agents = [
     PPOAgentsLosses.PPOAgentWithVanillaPolicyGradientLoss(actor, critic), # 0

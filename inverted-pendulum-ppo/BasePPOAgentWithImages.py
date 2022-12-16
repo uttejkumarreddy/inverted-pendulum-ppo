@@ -11,15 +11,13 @@ class BasePPOAgentWithImages(BasePPOAgent):
         self.crop_dim = None
         self.img_dim = (64, 64)
 
-        self.images = []
-
     # Apply action and get observation from environment
     def reset_env(self):
         state = self.env.reset()
 
-        # Store images
         img = self.env.render(mode='rgb_array')
         self.images.append(img)
+        self.env.close()
 
         return state
 
@@ -37,7 +35,12 @@ class BasePPOAgentWithImages(BasePPOAgent):
         
         # Calculate angular velocites based on the images collected
         angular_velocities = self.calculate_angular_velocities()
-        print(angular_velocities)
+        for i in range(len(batch_state)):
+            # Mask out sin and cos theta
+            batch_state[i][0] = 0
+            batch_state[i][1] = 0
+            # Replace with calculated angular velocity
+            batch_state[i][2] = angular_velocities[i]
         
         actor_loss = self.calculate_actor_loss(batch_state, batch_action, batch_reward, batch_obs, batch_rtg)
         critic_loss = self.calculate_critic_loss(batch_state, batch_action, batch_reward, batch_obs, batch_rtg)
@@ -66,6 +69,7 @@ class BasePPOAgentWithImages(BasePPOAgent):
             int(self.crop_proportions[3] * image.shape[1])
         )
 
+        grayImages = []
         for image in self.images:
             # Crop the image for focus
             image = image[crop_dim[0]: crop_dim[2], crop_dim[1]: crop_dim[3], :]
@@ -73,17 +77,21 @@ class BasePPOAgentWithImages(BasePPOAgent):
 
             # Convert to grayscale
             image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            grayImages.append(image)
 
         # Once all images are pre-processed, detect the position of the pendulum
         # in each image and calculate angular velocities
         xy = []
-        for image in self.images:
+        for image in grayImages:
             # Detecting xy
-            image = np.float32(image)
-            corners = cv2.cornerHarris(image, 2, 3, 0.04)
-            corner = np.argmax(corners)
-            x, y = np.unravel_index(corners, corners.shape)
-            xy.append((x, y))
+            try:
+                image = np.float32(image)
+                corners = cv2.cornerHarris(image, 2, 3, 0.04)
+                corner = np.argmax(corners)
+                x, y = np.unravel_index(corner, corners.shape)
+                xy.append((x, y))
+            except:
+                xy.append((0, 0))
 
         theta = []
         for i in range(1, len(xy)):
